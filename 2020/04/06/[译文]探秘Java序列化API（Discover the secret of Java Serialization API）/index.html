@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+
+  
+  <title>[译文]探秘Java序列化API（Discover the secret of Java Serialization API） | Hexo</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="我们都知道Java平台允许我们在内存中创建可重复使用的对象。但所有创建的对象仅在Java虚拟机运行时存在。如果我们创建的对象能比虚拟机的存活时间更久就再好不过了。现在有了对象序列化，你就可以“扁平化”你的对象并以某种方式重复使用它们。对象序列化指的是将一个对象的状态保存为一个字节序列的过程，此外也包括之后将该字节序列恢复为一个可用对象的过程。Java序列化API为开发人员进行对象序列化提供了一套标">
+<meta property="og:type" content="article">
+<meta property="og:title" content="[译文]探秘Java序列化API（Discover the secret of Java Serialization API）">
+<meta property="og:url" content="http://yoursite.com/2020/04/06/[%E8%AF%91%E6%96%87]%E6%8E%A2%E7%A7%98Java%E5%BA%8F%E5%88%97%E5%8C%96API%EF%BC%88Discover%20the%20secret%20of%20Java%20Serialization%20API%EF%BC%89/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="我们都知道Java平台允许我们在内存中创建可重复使用的对象。但所有创建的对象仅在Java虚拟机运行时存在。如果我们创建的对象能比虚拟机的存活时间更久就再好不过了。现在有了对象序列化，你就可以“扁平化”你的对象并以某种方式重复使用它们。对象序列化指的是将一个对象的状态保存为一个字节序列的过程，此外也包括之后将该字节序列恢复为一个可用对象的过程。Java序列化API为开发人员进行对象序列化提供了一套标">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2020-04-06T07:28:03.273Z">
+<meta property="article:modified_time" content="2019-11-10T13:10:11.406Z">
+<meta property="article:author" content="John Doe">
+<meta name="twitter:card" content="summary">
+  
+    <link rel="alternate" href="/atom.xml" title="Hexo" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/favicon.png">
+  
+  
+    <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+<meta name="generator" content="Hexo 4.2.0"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">Hexo</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+          <a id="nav-rss-link" class="nav-icon" href="/atom.xml" title="RSS Feed"></a>
+        
+        <a id="nav-search-btn" class="nav-icon" title="Search"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://yoursite.com"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main"><article id="post-[译文]探秘Java序列化API（Discover the secret of Java Serialization API）" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2020/04/06/%5B%E8%AF%91%E6%96%87%5D%E6%8E%A2%E7%A7%98Java%E5%BA%8F%E5%88%97%E5%8C%96API%EF%BC%88Discover%20the%20secret%20of%20Java%20Serialization%20API%EF%BC%89/" class="article-date">
+  <time datetime="2020-04-06T07:28:03.273Z" itemprop="datePublished">2020-04-06</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      [译文]探秘Java序列化API（Discover the secret of Java Serialization API）
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <p>我们都知道Java平台允许我们在内存中创建可重复使用的对象。但所有创建的对象仅在Java虚拟机运行时存在。如果我们创建的对象能比虚拟机的存活时间更久就再好不过了。现在有了对象序列化，你就可以“扁平化”你的对象并以某种方式重复使用它们。<br>对象序列化指的是将一个对象的状态保存为一个字节序列的过程，此外也包括之后将该字节序列恢复为一个可用对象的过程。Java序列化API为开发人员进行对象序列化提供了一套标准机制。只要理解了其中的类与方法，API用起来会很容易也很方便。<br>本文将由浅入深地探究如何持久化Java对象。我们将学习到三种不同的序列化方式——使用默认协议，定制默认协议以及自定义协议。我们还将探究所有持久化方案都会涉及到的主题，比如对象缓存，版本控制以及性能问题。<br>读完本文后，你应该会对还不太懂的Java API有一个更深的理解。</p>
+<h3 id="重中之重：默认机制"><a href="#重中之重：默认机制" class="headerlink" title="重中之重：默认机制"></a>重中之重：默认机制</h3><p>我们先从最基本的开始。我们先要有一个可持久化的对象才能对其进行持久化。对象通过实现<code>java.io.Serializable</code>接口来表明它是可以被持久化的，也就是告诉底层API这个对象可以“扁平化”到字节中，之后也可以再恢复成一个对象。<br>先来看一个我们一会儿要用于演示序列化机制的可持久化类：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">10  import java.io.Serializable;</span><br><span class="line">20  import java.util.Date;</span><br><span class="line">30  import java.util.Calendar;</span><br><span class="line">40  public class PersistentTime implements Serializable</span><br><span class="line">50  &#123;</span><br><span class="line">60      private Date time;</span><br><span class="line">70 </span><br><span class="line">80      public PersistentTime()</span><br><span class="line">90      &#123;</span><br><span class="line">100         time &#x3D; Calendar.getInstance().getTime();</span><br><span class="line">110     &#125;</span><br><span class="line">120</span><br><span class="line">130     public Date getTime()</span><br><span class="line">140     &#123;</span><br><span class="line">150         return time;</span><br><span class="line">160     &#125;</span><br><span class="line">170 &#125;</span><br></pre></td></tr></table></figure>
+<p>如你所见，创建一个可持久化类和创建普通类相比唯一的区别就是前者实现了<code>java.io.Serializable</code>接口（第40行）。<code>Serializable</code>接口是一个标记接口——它仅仅向序列化机制表明这个类可以进行持久化。所以我们得到了第一条有关序列化的规则：</p>
+<p><strong>规则#1: 需要进行持久化的对象要求所属类或其父类实现<code>Serializable</code>接口</strong></p>
+<p>接下来要真正对对象进行持久化了。需要借助<code>java.io.ObjetOutputStream</code>类来实现。这个类是一个过滤器类——它需要包装一个底层的字节流（称之为节点流）来处理序列化协议。节点流可以用于写入文件系统或套接字。也就是说我们可以很方便地将一个序列化后的对象通过网线传输然后在网线另一端恢复成一个可用的对象！<br>来看一段用于保存一个<code>PersistentTime</code>对象的代码：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line">10  import java.io.ObjectOutputStream;</span><br><span class="line">20  import java.io.FileOutputStream;</span><br><span class="line">30  import java.io.IOException;</span><br><span class="line">40  public class FlattenTime</span><br><span class="line">50  &#123;</span><br><span class="line">60      public static void main(String [] args)</span><br><span class="line">70      &#123;</span><br><span class="line">80          String filename &#x3D; &quot;time.ser&quot;;</span><br><span class="line">90          if(args.length &gt; 0)</span><br><span class="line">100         &#123;</span><br><span class="line">110             filename &#x3D; args[0];</span><br><span class="line">120         &#125; </span><br><span class="line">130         PersistentTime time &#x3D; new PersistentTime();</span><br><span class="line">140         FileOutputStream fos &#x3D; null;</span><br><span class="line">150         ObjectOutputStream out &#x3D; null;</span><br><span class="line">160         try</span><br><span class="line">170         &#123;</span><br><span class="line">180             fos &#x3D; new FileOutputStream(filename);</span><br><span class="line">190             out &#x3D; new ObjectOutputStream(fos);</span><br><span class="line">200             out.writeObject(time);</span><br><span class="line">210             out.close();</span><br><span class="line">220         &#125;</span><br><span class="line">230         catch(IOException ex)</span><br><span class="line">240         &#123;</span><br><span class="line">250             ex.printStackTrace();</span><br><span class="line">260         &#125;</span><br><span class="line">270     &#125;</span><br><span class="line">280 &#125;</span><br></pre></td></tr></table></figure>
+<p>关键代码在第200行，调用了<code>ObjectOutputStream.writeObject()</code>方法，它将对象进行持久化（这里是以文件为例）并隐藏了序列化机制的细节。<br>借助如下代码可以将此文件恢复成对象：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br></pre></td><td class="code"><pre><span class="line">10  import java.io.ObjectInputStream;</span><br><span class="line">20  import java.io.FileInputStream;</span><br><span class="line">30  import java.io.IOException;</span><br><span class="line">40  import java.util.Calendar;</span><br><span class="line">50  public class InflateTime</span><br><span class="line">60  &#123;</span><br><span class="line">70      public static void main(String [] args)</span><br><span class="line">80      &#123;</span><br><span class="line">90          String filename &#x3D; &quot;time.ser&quot;; </span><br><span class="line">100         if(args.length &gt; 0)</span><br><span class="line">110         &#123;</span><br><span class="line">120             filename &#x3D; args[0];</span><br><span class="line">130         &#125;</span><br><span class="line">140         PersistentTime time &#x3D; null;</span><br><span class="line">150         FileInputStream fis &#x3D; null;</span><br><span class="line">160         ObjectInputStream in &#x3D; null;</span><br><span class="line">170         try</span><br><span class="line">180         &#123;</span><br><span class="line">190             fis &#x3D; new FileInputStream(filename);</span><br><span class="line">200             in &#x3D; new ObjectInputStream(fis);</span><br><span class="line">210             time &#x3D; (PersistentTime)in.readObject();</span><br><span class="line">220             in.close();</span><br><span class="line">230         &#125;</span><br><span class="line">240         catch(IOException ex)</span><br><span class="line">250         &#123;</span><br><span class="line">260             ex.printStackTrace();</span><br><span class="line">270         &#125;</span><br><span class="line">280         catch(ClassNotFoundException ex)</span><br><span class="line">290         &#123;</span><br><span class="line">300             ex.printStackTrace();</span><br><span class="line">310         &#125;</span><br><span class="line">320         &#x2F;&#x2F; print out restored time</span><br><span class="line">330         System.out.println(&quot;Flattened time: &quot; + time.getTime());</span><br><span class="line">340         System.out.println();</span><br><span class="line">350         &#x2F;&#x2F; print out the current time</span><br><span class="line">360         System.out.println(&quot;Current time: &quot; + Calendar.getInstance().getTime());</span><br><span class="line">370     &#125;</span><br><span class="line">380 &#125;</span><br></pre></td></tr></table></figure>
+<p>在上面的代码中，对象恢复发生在第210行处，此处调用了<code>ObjectInputStream.readObject()</code>方法。该方法读入了我们刚刚持久化后的字节，然后创建了和原始对象一模一样的新对象。由于<code>readObject()</code>可用于读入任何序列化后的对象，因此需要再进行一次类型强转。考虑到这一点，序列化对象恢复时程序必须要能访问相应的class文件。也就是说序列化时对象所属类的class文件和方法是不会被保存下来的，保存的仅仅是这个对西那个的当前状态。<br>随后第360行，我们调用<code>getTime()</code>方法来获取原对象进行了持久化的时间。将持久化的时间和当前时间进行比较来证实序列化机制的确如我们所想的生效了。</p>
+<h4 id="不可序列化对象"><a href="#不可序列化对象" class="headerlink" title="不可序列化对象"></a>不可序列化对象</h4><p>Java序列化的基本机制用起来很简单，但还有些事情我们需要了解。前面说到只有标记了<code>Serializable</code>的对象才能持久化。<code>java.lang.Object</code>类没有实现这个接口。因此不是所有Java对象都能被自动地持久化。好消息是大部分对象——比如AWT和Swing GUI组件、字符串和数组——都是可以序列化的。<br>另一方面，系统级的类如<code>Thread</code>、<code>OutputStream</code>及其子类以及<code>Socket</code>显然都是不能序列化的。实际上就算它们能序列化，这么做也没有任何意义。例如在我的JVM上运行的线程会使用到我的系统的内存。将其持久化然后试图让它在你的JVM上跑起来完全没有任何意义。另一个与<code>java.lang.Object</code>类没有实现<code>Serializable</code>接口有关的知识点是：任何你创建的继承自<code>Object</code>（或其他不可序列化的类）的类都不能序列化，除非你自己去实现这个接口（像前面的样例代码那样。<br>但这样就产生了一个问题：如果我们的类里面有一个<code>Thread</code>类型的成员变量怎么办？我们还能对这个类的实例对象进行持久化吗？答案是肯定的，只要我们将类中的<code>Thread</code>变量标记为<code>transient</code>就行了，序列化机制就会得知我们的意图。<br>假设我们想创建一个类来播放一段动画。我不会真的在这里写下动画相关的代码，真正的样例代码如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">10  import java.io.Serializable;</span><br><span class="line">20  public class PersistentAnimation implements Serializable, Runnable</span><br><span class="line">30  &#123;</span><br><span class="line">40      transient private Thread animator;</span><br><span class="line">50      private int animationSpeed;</span><br><span class="line">60      public PersistentAnimation(int animationSpeed)</span><br><span class="line">70      &#123;</span><br><span class="line">80          this.animationSpeed &#x3D; animationSpeed;</span><br><span class="line">90          animator &#x3D; new Thread(this);</span><br><span class="line">100         animator.start();</span><br><span class="line">110     &#125;</span><br><span class="line">120     public void run()</span><br><span class="line">130     &#123;</span><br><span class="line">140         while(true)</span><br><span class="line">150         &#123;</span><br><span class="line">160             &#x2F;&#x2F; do animation here</span><br><span class="line">170         &#125;</span><br><span class="line">180     &#125; </span><br><span class="line">190 &#125;</span><br></pre></td></tr></table></figure>
+<p>当我们创建一个<code>PersistentAnimation</code>类的实例时，<code>animator</code>线程将会被创建然后运行。我把第40行的线程标记为<code>transient</code>以此来搞死序列化机制这个成员变量的状态不需要像对象的其他成员变量（比如<code>speed</code>）一样保存下来。注意：一定要把不能被序列化和不想被序列化的成员变量标记上<code>transient</code>。序列化并不关心访问权限修饰辞（如private）——所有可持久化成员变量（即没有标记<code>transient</code>）都会作为对象持久化状态的一部分来进行持久化。<br>由此我们又有了一条规则。以下是持久化对象的两条规则：</p>
+<p><strong>规则#1: 需要进行持久化的对象要么所属类实现了<code>Serializable</code>接口，要么它的父类实现了这个接口</strong></p>
+<p><strong>规则#2: 需要进行持久化的对象必须将所有非序列化成员变量标记上<code>transient</code></strong></p>
+<h3 id="定制默认协议"><a href="#定制默认协议" class="headerlink" title="定制默认协议"></a>定制默认协议</h3><p>我们来继续探索第二种序列化的方式：定制默认协议。虽然上面的动画代码已经展示了如何在可序列化对象中包含一个线程变量，但其实还存在着一个问题。我们先回想一下Java是怎么创建对象的。当我们用<code>new</code>关键字创建对象时，构造器仅在创建类的新实例时被调用。先记住这一点，再回过头看一眼动画代码。我们先初始化<code>PersistentAnimation</code>类的一个实例对象，它开始运行动画线程。接下来我们用以下代码来序列化这个对象：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">PersistentAnimation animation &#x3D; new PersistentAnimation(10);</span><br><span class="line">FileOutputStream fos &#x3D; ...</span><br><span class="line">ObjectOutputStream out &#x3D; new ObjectOutputStream(fos);</span><br><span class="line">out.writeObject(animation);</span><br></pre></td></tr></table></figure>
+<p>现在一切正常，接下来我们调用<code>readObject()</code>方法来把对象恢复回来。记住，构造器仅在新实例创建时被调用。但我们并不是在创建实例，我们是在还原一个持久化了的对象。这样就导致对象仅会在第一次创建实例时播放一次动画。这样就算持久化了，又有什么意义呢？<br>好消息来了。我们可以让这个对象按照我们所希望的那样运行；我们可以在还原对象时重新播放动画。为此我们可以创建一个<code>startAnimation()</code>工具方法来做构造器在做的事情。我们可以在恢复对象后调用这个方法。看上去不错，但这样又使得事情变复杂了。现在所有想要使用这个动画对象的人都得知道在对进行反序列化后必须调用这个方法。这就不能像Java序列化API向开发者承诺的那样实现一个无缝的机制。<br>但还有一个奇怪又巧妙的解决方案。通过使用序列化机制的内置特性，开发人员可以在其类文件中提供两个方法来增强反序列化处理过程。两个方法分别是：</p>
+<p><code>private void writeObject(ObjectOutputStream out) throws IOException;</code></p>
+<p><code>private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException;</code></p>
+<p>切记这两个方法都要定义为<code>private</code>，说明它们都不是继承、重写或重载的。在方法被调用时虚拟机会检查它是否被定义了。虚拟机不像其他对象，它随时可以调用你写的类的私有方法。因此类的完整性得以保留，与此同时序列化协议也能正常进行。使用序列化协议的方式没有什么改变，还是调用<code>ObjectOutputStreamwriteObject()</code>或<code>ObjectInputStream.readObject()</code>。因此即使提供了两个专用的私有方法，对象序列化的方式也没有改变。<br>考虑到这些，我们来看一眼修改版的<code>PersistentAnimation</code>，它包含了上面说到的私有方法，允许我们控制反序列化过程，给了我们一个伪构造函数：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><span class="line">10  import java.io.Serializable;</span><br><span class="line">20  public class PersistentAnimation implements Serializable, Runnable</span><br><span class="line">30  &#123;</span><br><span class="line">40      transient private Thread animator;</span><br><span class="line">50      private int animationSpeed;</span><br><span class="line">60      public PersistentAnimation(int animationSpeed)</span><br><span class="line">70      &#123;</span><br><span class="line">80          this.animationSpeed &#x3D; animationSpeed;</span><br><span class="line">90          startAnimation(); </span><br><span class="line">100     &#125;</span><br><span class="line">110     public void run()</span><br><span class="line">120     &#123;</span><br><span class="line">130         while(true)</span><br><span class="line">140         &#123;</span><br><span class="line">150             &#x2F;&#x2F; do animation here</span><br><span class="line">160         &#125;</span><br><span class="line">170     &#125; </span><br><span class="line">180     private void writeObject(ObjectOutputStream out) throws IOException</span><br><span class="line">190     &#123;</span><br><span class="line">200         out.defaultWriteObject(); </span><br><span class="line">220     &#125;</span><br><span class="line">230     private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException</span><br><span class="line">240     &#123;</span><br><span class="line">250         &#x2F;&#x2F; our &quot;pseudo-constructor&quot;</span><br><span class="line">260         in.defaultReadObject();</span><br><span class="line">270         &#x2F;&#x2F; now we are a &quot;live&quot; object again, so let&#39;s run rebuild and start</span><br><span class="line">280         startAnimation();</span><br><span class="line">290</span><br><span class="line">300     &#125;</span><br><span class="line">310     private void startAnimation()</span><br><span class="line">320     &#123;</span><br><span class="line">330         animator &#x3D; new Thread(this);</span><br><span class="line">340         animator.start();</span><br><span class="line">350     &#125;</span><br><span class="line">360 &#125;</span><br></pre></td></tr></table></figure>
+<p>注意看每个新增的私有方法的第一行。其中所调用的方法作用就像名字一样——对持久化对象进行默认的读写，这很重要，因为我们并没有取代正常的处理过程，只是在后面追加了一些逻辑。这些方法之所以能起作用，是因为对<code>ObjectOutputStream.writeObject()</code>的调用启动了序列化协议。首先，对象会接受检查以确认它实现了<code>Serializable</code>接口，然后再检查是否有那两个私有方法。如果有，stream类将会作为参数传入从而让代码控制其使用。<br>这两个私有方法可以用于定制任何序列化流程。你可以在输出时加密输入时解密（注意字节是明文读写的没有做任何处理）。也可以用在给流加入额外的数据，比如公司版本号。一切皆有可能。</p>
+<h4 id="停止序列化！"><a href="#停止序列化！" class="headerlink" title="停止序列化！"></a>停止序列化！</h4><p>现在我们对序列化过程有了一些了解了，现在让我们看点别的。如果你写了个类，它的父类是可序列化的，但你却希望你的类是不可序列化的，这时候该怎么办呢？因为父类实现了<code>Serializable</code>接口，那子类就一定也实现了这个接口，这没办法改变（在前文提到的两条规则都满足的情况下）。为了阻止自动化的实现序列化，你可以再次借助私有方法来抛出<code>NotSerializableException</code>异常。下面是样例代码：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">10  private void writeObject(ObjectOutputStream out) throws IOException</span><br><span class="line">20  &#123;</span><br><span class="line">30      throw new NotSerializableException(&quot;Not today!&quot;);</span><br><span class="line">40  &#125;</span><br><span class="line">50  private void readObject(ObjectInputStream in) throws IOException</span><br><span class="line">60  &#123;</span><br><span class="line">70      throw new NotSerializableException(&quot;Not today!&quot;);</span><br><span class="line">80  &#125;</span><br></pre></td></tr></table></figure>
+<p>任何尝试着读写对象的举动现在都会导致异常被抛出。记住，只要那些方法定义为<code>private</code>，没人可以在不改你源码的情况下对代码逻辑进行篡改——Java不允许重写这些方法。</p>
+<h3 id="创建属于你的协议：Externalizable接口"><a href="#创建属于你的协议：Externalizable接口" class="headerlink" title="创建属于你的协议：Externalizable接口"></a>创建属于你的协议：<code>Externalizable</code>接口</h3><p>为了让我们的探秘之旅更完整，接下来我们来介绍序列化的第三种方式：利用<code>Externalizable</code>接口来创建自定义的协议。不需要实现<code>Serializable</code>接口，而是实现包含两个方法的<code>Externalizable</code>接口：</p>
+<p><code>public void writeExternal(ObjectOutput out) throws IOException;</code></p>
+<p><code>public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException;</code></p>
+<p>只需要重写这两个方法就可以自定义协议了。不过不像前两种序列化方式，这种没有提供任何内容。也就是说协议完全是掌握在你自己手里的。这是最麻烦的方案，但可控性也是最强的。对于这种序列化方式的一个典型例子是：用Java读写PDF文件。如果你知道怎么读写PDF（需要字节序列），你可以在<code>writeExternal</code>和<code>readExternal</code>方法中写上针对PDF的协议。<br>和前文说的一样，实现<code>Externalizable</code>接口的类用起来没什么区别。只需要调用<code>writeObject()</code>和<code>readObject</code>，那些可外部化方法就会被自动调用。</p>
+<h3 id="几个问题"><a href="#几个问题" class="headerlink" title="几个问题"></a>几个问题</h3><p>对于不了解序列化协议的开发者来说，还有一些问题看起来会很奇怪。当然，本文的目的就是让你了解它！接下来我们来看看这些问题，看看我们是不是能理解它们的以及如何处理它们。</p>
+<h4 id="流中的缓存对象"><a href="#流中的缓存对象" class="headerlink" title="流中的缓存对象"></a>流中的缓存对象</h4><p>首先我们来考虑这种情况：将对象写入到流中然后又再写一次。默认情况下，一个<code>ObjectOutputStream</code>对象会对写入的对象保留一个引用。也就是说如果对已写入流的对象再次写入，对象的新状态不会被保存！下面是一个反映了这个问题的代码片段；</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">10  ObjectOutputStream out &#x3D; new ObjectOutputStream(...);</span><br><span class="line">20  MyObject obj &#x3D; new MyObject(); &#x2F;&#x2F; must be Serializable</span><br><span class="line">30  obj.setState(100);</span><br><span class="line">40  out.writeObject(obj); &#x2F;&#x2F; saves object with state &#x3D; 100</span><br><span class="line">50  obj.setState(200);</span><br><span class="line">60  out.writeObject(obj); &#x2F;&#x2F; does not save new object state</span><br></pre></td></tr></table></figure>
+<p>针对这种情况有两种解决方式。其一，你可以每次调用写入操作后都关闭流，确保每次写的都是新对象。其二，你可以调用<code>ObjectOutputStream.reset()</code>方法，它会让流释放持有的引用缓存，这样每一次调用写入就是真正的写入。不过要注意的是，<code>reset</code>方法会刷掉所有对象缓存，因此写入过的对象是可以再次被写入的。</p>
+<h4 id="版本控制"><a href="#版本控制" class="headerlink" title="版本控制"></a>版本控制</h4><p>第二个问题，比如你创建一个类，初始化它并且将它写到一个对象流里。持久化的对象在文件系统中待上一段时间。此时你修改了类文件，比如新增了一个成员变量。如果你对刚刚那个持久化对象进行反序列化的话会发生什么呢？<br>坏消息是会抛一个异常出来——准确点就是<code>java.io.InvalidClassException</code>异常——因为所有可持久化类都会自动地赋予一个唯一的标识符。如果当前类的标识符和持久化对象的标识符不一致，就会抛一个异常。不过咱们再仔细想想，为什么它仅仅因为我增加一个成员变量就抛异常？不能直接给新增的成员变量赋一个默认值给下次输出时用吗？<br>其实是可以的，只是需要改点代码。这个标识符实际上是所有类中都有的成员变量<code>serialVersionUID</code>。如果你想进行版本控制，你只需要手动的写出<code>serialVersionUID</code>成员变量然后让它不随类文件的改变而改变就行了。你可以使用JDK发行版附带的工具<code>serialver</code>来看看默认的版本UID是多少（默认是对象的hashcode值）。<br>以下是对<code>Baz</code>类使用<code>serialver</code>的例子：</p>
+<p><code>&gt; serialver Baz</code></p>
+<p><code>&gt; Baz: static final long serialVersionUID = 10275539472837495L;</code></p>
+<p>只需要把返回行中的版本ID拷贝到你的代码中。（Windows框中，可以使用-show选项运行它以简化复制和粘贴过程。）现在就算你对<code>Baz</code>类文件进行了修改，只要保证版本ID始终是指定值就行了。<br>只要发生的修改是兼容的，版本控制就能生效。兼容性修改包括增加或移除方法或成员变量。非兼容性修改包括修改对象的继承关系或移除对<code>Serializable</code>接口的实现。兼容性修改和非兼容性修改列表在Java序列化规范中给出。</p>
+<h4 id="性能考虑"><a href="#性能考虑" class="headerlink" title="性能考虑"></a>性能考虑</h4><p>第三个问题：默认机制尽管易于使用，但性能上并不是最好的。我把<code>Date</code>对象写到文件中1000次，重复这个过程一百次。写出<code>Date</code>对象的平均时间是115毫秒。然后我用标准I/O流手动将<code>Date</code>对象写出同样次数；平均耗时是52毫秒。差不多只用了一半的时间！这说明便捷与性能之间的博弈权衡在序列化中也是存在。如果速度是你程序的首要考虑因素，你可能需要考虑自己建立一套协议了。<br>前面说到对象引用会缓存在输出流中。因此如果流不关闭的化，写入到流中的对象是不会被系统进行垃圾回收的。最好是在写操作完成后尽早关闭流。</p>
+<h3 id="结论"><a href="#结论" class="headerlink" title="结论"></a>结论</h3><p>Java中的序列化是很简单的，实现起来同样简单。了解了实现序列化的三种方式对你使用API也很有帮助。我们已经在本文中了解到关于序列化机制的很多内容了，我希望本文把要讲的都讲清楚了。就像敲代码一样，关键是要熟悉API并对其有所理解。本文为理解Java序列化API奠定了坚实的基础，但我仍然建议你进一步阅读规范以了解更细粒度的细节。</p>
+<h4 id="关于作者"><a href="#关于作者" class="headerlink" title="关于作者"></a>关于作者</h4><p>Todd Greanier,director of technology for ComTech Training, has been teaching and developing Java since it was introduced publicly. An expert in distributed Java technologies, he teaches classes in a wide range of topics, including JDBC, RMI, CORBA, UML, Swing, servlets/JSP, security, JavaBeans, Enterprise Java Beans, and multithreading. He also creates custom seminars for corporations, slanted to their specific needs. Todd lives in upstate New York with his wife, Stacey, and his cat, Bean.</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://yoursite.com/2020/04/06/[%E8%AF%91%E6%96%87]%E6%8E%A2%E7%A7%98Java%E5%BA%8F%E5%88%97%E5%8C%96API%EF%BC%88Discover%20the%20secret%20of%20Java%20Serialization%20API%EF%BC%89/" data-id="ck8o5khxs0001bgve08jn4hln" class="article-share-link">Share</a>
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+  
+    <a href="/2020/04/06/hello-world/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">Hello World</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+
+  
+    
+
+  
+    
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Archives</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/04/">April 2020</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Recent Posts</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2020/04/06/%5B%E8%AF%91%E6%96%87%5D%E6%8E%A2%E7%A7%98Java%E5%BA%8F%E5%88%97%E5%8C%96API%EF%BC%88Discover%20the%20secret%20of%20Java%20Serialization%20API%EF%BC%89/">[译文]探秘Java序列化API（Discover the secret of Java Serialization API）</a>
+          </li>
+        
+          <li>
+            <a href="/2020/04/06/hello-world/">Hello World</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2020 John Doe<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+
+
+  
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+
+  
+<script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+  </div>
+</body>
+</html>
